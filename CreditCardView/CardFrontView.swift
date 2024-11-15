@@ -68,7 +68,7 @@ struct CardFrontView: View {
             }
         }
         .padding()
-        .frame(width: 300, height: 180)
+        .frame(width: 350, height: 200)
         .background(
             LinearGradient(
                 stops: [

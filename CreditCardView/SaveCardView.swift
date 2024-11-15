@@ -45,15 +45,15 @@ struct SaveCardView: View {
         
     ]
     
+    @State private var emptyAlert = false
+    
     var body: some View {
         VStack(spacing: 20) {
             TextField("Card Name", text: $cardName)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .padding()
-            
-            // IBAN ve Ülke Kodu
+
             HStack {
-                // Ülke Kodu Seçici
                 Menu {
                     ForEach(countryCodes) { country in
                         Button(action: {
@@ -78,22 +78,25 @@ struct SaveCardView: View {
                 }
                 
                 TextField("IBAN", text: $iban)
+                    .onChange(of: iban) { newValue in
+                        iban = formatIBAN(newValue)
+                    }
                     .textFieldStyle(RoundedBorderTextFieldStyle())
             }
             .padding()
             
             TextField("Kart Numarası", text: $cardNumber)
+                .onChange(of: cardNumber) { newValue in
+                    cardNumber = formatCardNumber(newValue)
+                }
                 .keyboardType(.numberPad)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .padding()
             
-            // Ay/Yıl Seçici
             HStack {
                 Text("Son Kullanma:")
                     .foregroundColor(.gray)
                 Spacer()
-                
-                // Ay Seçici
                 Picker("Ay", selection: $selectedMonth) {
                     ForEach(months, id: \.self) { month in
                         Text(String(format: "%02d", month))
@@ -106,7 +109,6 @@ struct SaveCardView: View {
                 Text("/")
                     .font(.title2)
                 
-                // Yıl Seçici
                 Picker("Yıl", selection: $selectedYear) {
                     ForEach(years, id: \.self) { year in
                         Text(String(format: "%d", year % 100))
@@ -130,21 +132,60 @@ struct SaveCardView: View {
                     .background(Color.blue)
                     .cornerRadius(10)
             }
+            .alert(isPresented: $emptyAlert) {
+                            Alert(
+                                title: Text("Hata"),
+                                message: Text("Lütfen tüm alanları doldurun."),
+                                dismissButton: .default(Text("Tamam"))
+                            )
+                        }
         }
         .padding()
         .navigationTitle("Kredi Kartı Bilgilerini Kaydet")
         .onAppear {
-            // Kayıtlı ülke kodunu yükle
             selectedCountryCode = savedCountryCode
         }
     }
     
+    
     func saveCardDetails() {
-        savedCardName = cardName
-        savedIBAN = selectedCountryCode + iban // Ülke kodu ile IBAN'ı birleştir
-        savedCardNumber = cardNumber
-        savedExpirationDate = String(format: "%02d/%02d", selectedMonth, selectedYear % 100)
-        savedCVV2 = cvv2
+            if cardName.isEmpty || iban.isEmpty || cardNumber.isEmpty || cvv2.isEmpty {
+                emptyAlert = true
+            } else {
+                savedCardName = cardName
+                savedIBAN = selectedCountryCode + iban
+                savedCardNumber = cardNumber
+                savedExpirationDate = String(format: "%02d/%02d", selectedMonth, selectedYear % 100)
+                savedCVV2 = cvv2
+            }
+        }
+    func formatIBAN(_ input: String) -> String {
+        // Boşlukl sil harfleri büyük yap
+        let cleaned = input.uppercased().replacingOccurrences(of: " ", with: "")
+        
+        let limited = String(cleaned.prefix(24))
+        
+        // İlk iki ve son iki haneyi ayırarak kalanını 4'lük gruplara böl
+        let prefix = String(limited.prefix(2))
+        let suffix = String(limited.suffix(2))
+        let middleSection = String(limited.dropFirst(2).dropLast(2))
+        
+        let groupedMiddle = stride(from: 0, to: middleSection.count, by: 4).map {
+            Array(middleSection)[$0..<min($0 + 4, middleSection.count)]
+        }.map { String($0) }.joined(separator: " ")
+
+        return "\(prefix) \(groupedMiddle) \(suffix)"
+    }
+    func formatCardNumber(_ input: String) -> String {
+        // Boşlukları kaldır ve harfleri büyük harfe çevir
+        let cleaned = input.uppercased().replacingOccurrences(of: " ", with: "")
+        let limited = String(cleaned.prefix(16))
+        
+                // 4'lük gruplara ayır
+        let grouped = stride(from: 0, to: limited.count, by: 4).map {
+                    Array(cleaned)[$0..<min($0 + 4, cleaned.count)]
+                }
+                return grouped.map { String($0) }.joined(separator: " ")
     }
 }
 

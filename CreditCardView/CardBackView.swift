@@ -36,7 +36,7 @@ struct CardBackView: View {
             Spacer()
         }
         .padding()
-        .frame(width: 300,height: 180)
+        .frame(width: 350,height: 200)
         .background(LinearGradient(stops: [.init(color: .black.opacity(0.9), location: 0), .init(color: .black.opacity(0.6), location: 1)], startPoint: .top, endPoint: .bottom))
         .cornerRadius(15)
         
