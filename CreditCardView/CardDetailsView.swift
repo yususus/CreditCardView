@@ -36,7 +36,7 @@ struct CardDetailsView: View {
                                 axis: (x: 0, y: 1, z: 0)
                             )
                     } else {
-                        CardFrontView(cardNumber: savedCardNumber, expirationDate: savedExpirationDate, iban: savedIBAN, cardName: savedCardName)
+                        CardFrontView(cardNumber: savedCardNumber, expirationDate: savedExpirationDate, iban: savedIBAN, cardName: savedCardName, CardCompany: getCardCompany(savedCardNumber))
                     }
                 }
                 
@@ -56,6 +56,16 @@ struct CardDetailsView: View {
             .padding()
         }
     }
+    func getCardCompany(_ cardNumber: String) -> String {
+        if cardNumber.hasPrefix("4") {
+            return "VISA"
+        } else if cardNumber.hasPrefix("5") {
+            return "MasterCard"
+        } else {
+            return "UNKNOWN"
+        }
+    }
+    
 }
 
 #Preview {

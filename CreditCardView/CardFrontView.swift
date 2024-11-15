@@ -12,6 +12,7 @@ struct CardFrontView: View {
     let expirationDate: String
     let iban: String
     let cardName: String
+    let CardCompany: String
     
     private var countryCode: String {
         String(iban.prefix(2))
@@ -23,6 +24,10 @@ struct CardFrontView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
+            Image(CardCompany.lowercased())
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 50, height: 30)
             Spacer()
             Text(cardName)
                 .font(.headline)
@@ -84,5 +89,5 @@ struct CardFrontView: View {
 }
 
 #Preview {
-    CardFrontView(cardNumber: "4345 0000", expirationDate: "12/27", iban: "TR31231", cardName: "dasda")
+    CardFrontView(cardNumber: "4345 0000", expirationDate: "12/27", iban: "TR31231", cardName: "dasda", CardCompany: "mastercard")
 }
