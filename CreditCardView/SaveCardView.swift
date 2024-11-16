@@ -14,6 +14,7 @@ struct CountryCode: Identifiable, Hashable {
 }
 
 struct SaveCardView: View {
+    @Binding var cards: [Card]
     @State private var iban: String = ""
     @State private var cardNumber: String = ""
     @State private var cvv2: String = ""
@@ -30,6 +31,7 @@ struct SaveCardView: View {
     @AppStorage("savedCountryCode") private var savedCountryCode: String = "TR"
     
     @State private var selectedCountryCode: String = ""
+    @Environment(\.presentationMode) var presentationMode
     
     private let months = Array(1...12)
     private let years = Array(Calendar.current.component(.year, from: Date())...(Calendar.current.component(.year, from: Date()) + 15))
@@ -125,7 +127,7 @@ struct SaveCardView: View {
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .padding()
             
-            Button(action: saveCardDetails) {
+            Button(action: saveCard) {
                 Text("Kaydet")
                     .foregroundColor(.white)
                     .padding()
@@ -147,35 +149,37 @@ struct SaveCardView: View {
         }
     }
     
-    
-    func saveCardDetails() {
-            if cardName.isEmpty || iban.isEmpty || cardNumber.isEmpty || cvv2.isEmpty {
-                emptyAlert = true
-            } else {
-                savedCardName = cardName
-                savedIBAN = selectedCountryCode + iban
-                savedCardNumber = cardNumber
-                savedExpirationDate = String(format: "%02d/%02d", selectedMonth, selectedYear % 100)
-                savedCVV2 = cvv2
-            }
+    func saveCard() {
+        if cardName.isEmpty || iban.isEmpty || cardNumber.isEmpty || cvv2.isEmpty {
+            emptyAlert = true
+        } else {
+            let newCard = Card(
+                cardName: cardName,
+                iban: selectedCountryCode + iban,
+                cardNumber: cardNumber,
+                expirationDate: String(format: "%02d/%02d", selectedMonth, selectedYear % 100),
+                cvv2: cvv2
+            )
+            cards.append(newCard)
+            presentationMode.wrappedValue.dismiss()
         }
+    }
+
     func formatIBAN(_ input: String) -> String {
-        // Boşlukl sil harfleri büyük yap
+        // Kullanıcının girilen değerini temizle
         let cleaned = input.uppercased().replacingOccurrences(of: " ", with: "")
         
+        // Sadece 22 karakterlik sınırlı bir alan kullan
         let limited = String(cleaned.prefix(24))
         
-        // İlk iki ve son iki haneyi ayırarak kalanını 4'lük gruplara böl
-        let prefix = String(limited.prefix(2))
-        let suffix = String(limited.suffix(2))
-        let middleSection = String(limited.dropFirst(2).dropLast(2))
-        
-        let groupedMiddle = stride(from: 0, to: middleSection.count, by: 4).map {
-            Array(middleSection)[$0..<min($0 + 4, middleSection.count)]
+        // 4'lük gruplara böl ve grupları birleştir
+        let grouped = stride(from: 0, to: limited.count, by: 4).map {
+            Array(limited)[$0..<min($0 + 4, limited.count)]
         }.map { String($0) }.joined(separator: " ")
-
-        return "\(prefix) \(groupedMiddle) \(suffix)"
+        
+        return grouped
     }
+
     func formatCardNumber(_ input: String) -> String {
         // Boşlukları kaldır ve harfleri büyük harfe çevir
         let cleaned = input.uppercased().replacingOccurrences(of: " ", with: "")
@@ -190,5 +194,5 @@ struct SaveCardView: View {
 }
 
 #Preview {
-    SaveCardView()
+    SaveCardView(cards: .constant([]))
 }

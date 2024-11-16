@@ -8,54 +8,91 @@
 import SwiftUI
 
 struct CardDetailsView: View {
-    @AppStorage("savedIBAN") private var savedIBAN: String = ""
-    @AppStorage("savedCardNumber") private var savedCardNumber: String = ""
-    @AppStorage("savedExpirationDate") private var savedExpirationDate: String = ""
-    @AppStorage("savedCVV2") private var savedCVV2: String = ""
-    @AppStorage("savedCardName") private var savedCardName: String = ""
-    
-    
+    @State private var cards: [Card] = []
+    @State private var selectedCard: Card? = nil
     @State private var isFlipped: Bool = false
-    
+    @State private var showSaveCardView: Bool = false
+
     var body: some View {
         NavigationView {
-            VStack(spacing: 20) {
-                NavigationLink(destination: SaveCardView()) {
-                    Text("Kredi Kartı Bilgilerini Kaydet")
-                        .foregroundColor(.white)
+            VStack {
+                if selectedCard != nil {
+                    // Seçili kartın detaylı görünümü
+                    VStack {
+                        ZStack {
+                            if isFlipped {
+                                CardBackView(cvv2: selectedCard?.cvv2 ?? "")
+                                    .rotation3DEffect(
+                                        .degrees(180),
+                                        axis: (x: 0, y: 1, z: 0)
+                                    )
+                            } else {
+                                CardFrontView(
+                                    cardNumber: selectedCard?.cardNumber ?? "",
+                                    expirationDate: selectedCard?.expirationDate ?? "",
+                                    iban: selectedCard?.iban ?? "",
+                                    cardName: selectedCard?.cardName ?? "",
+                                    CardCompany: getCardCompany(selectedCard?.cardNumber ?? "")
+                                )
+                            }
+                        }
+                        .rotation3DEffect(
+                            .degrees(isFlipped ? 180 : 0),
+                            axis: (x: 0, y: 1, z: 0)
+                        )
+                        .onTapGesture {
+                            withAnimation {
+                                isFlipped.toggle()
+                            }
+                        }
                         .padding()
-                        .background(Color.blue)
-                        .cornerRadius(10)
+                        .shadow(radius: 10)
+                        
+                        // Silme butonu
+                        Button(action: {
+                            deleteCard(selectedCard)
+                        }) {
+                            Text("Sil")
+                                .foregroundColor(.white)
+                                .padding()
+                                .background(Color.red)
+                                .cornerRadius(10)
+                        }
+                        .padding()
+                    }
                 }
                 
-                ZStack {
-                    if isFlipped {
-                        CardBackView(cvv2: savedCVV2)
-                            .rotation3DEffect(
-                                .degrees(180),
-                                axis: (x: 0, y: 1, z: 0)
+                ScrollView {
+                    VStack(spacing: 10) {
+                        ForEach(cards) { card in
+                            CardFrontView(
+                                cardNumber: card.cardNumber,
+                                expirationDate: card.expirationDate,
+                                iban: card.iban,
+                                cardName: card.cardName,
+                                CardCompany: getCardCompany(card.cardNumber)
                             )
-                    } else {
-                        CardFrontView(cardNumber: savedCardNumber, expirationDate: savedExpirationDate, iban: savedIBAN, cardName: savedCardName, CardCompany: getCardCompany(savedCardNumber))
+                            .padding()
+                            .onTapGesture {
+                                withAnimation {
+                                    selectedCard = card
+                                    isFlipped = false
+                                }
+                            }
+                        }
                     }
                 }
-                
-                .rotation3DEffect(
-                    .degrees(isFlipped ? 180 : 0),
-                    axis: (x: 0, y: 1, z: 0)
-                )
-                .onTapGesture {
-                    withAnimation {
-                        isFlipped.toggle()
-                    }
-                }
-                .shadow(radius: 10)
                 .padding()
-                
             }
-            .padding()
+            .toolbar {
+                // Yeni kart ekleme butonu
+                NavigationLink(destination: SaveCardView(cards: $cards)) {
+                    Image(systemName: "plus.circle.fill")
+                }
+            }
         }
     }
+    
     func getCardCompany(_ cardNumber: String) -> String {
         if cardNumber.hasPrefix("4") {
             return "VISA"
@@ -65,7 +102,12 @@ struct CardDetailsView: View {
             return "UNKNOWN"
         }
     }
-    
+
+    func deleteCard(_ card: Card?) {
+        guard let card = card else { return }
+        cards.removeAll { $0.id == card.id }
+        selectedCard = nil
+    }
 }
 
 #Preview {
