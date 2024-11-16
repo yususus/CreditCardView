@@ -8,11 +8,11 @@
 import SwiftUI
 
 struct CardDetailsView: View {
-    @State private var cards: [Card] = []
+    @StateObject private var cardManager = CardManager()
     @State private var selectedCard: Card? = nil
     @State private var isFlipped: Bool = false
     @State private var showSaveCardView: Bool = false
-
+    
     var body: some View {
         NavigationView {
             VStack {
@@ -50,7 +50,10 @@ struct CardDetailsView: View {
                         
                         // Silme butonu
                         Button(action: {
-                            deleteCard(selectedCard)
+                            if let card = selectedCard {
+                                cardManager.deleteCard(card)
+                                selectedCard = nil
+                            }
                         }) {
                             Text("Sil")
                                 .foregroundColor(.white)
@@ -64,7 +67,7 @@ struct CardDetailsView: View {
                 
                 ScrollView {
                     VStack(spacing: 10) {
-                        ForEach(cards) { card in
+                        ForEach(cardManager.cards) { card in
                             CardFrontView(
                                 cardNumber: card.cardNumber,
                                 expirationDate: card.expirationDate,
@@ -86,7 +89,7 @@ struct CardDetailsView: View {
             }
             .toolbar {
                 // Yeni kart ekleme butonu
-                NavigationLink(destination: SaveCardView(cards: $cards)) {
+                NavigationLink(destination: SaveCardView(cardManager: cardManager)) {
                     Image(systemName: "plus.circle.fill")
                 }
             }
@@ -101,12 +104,6 @@ struct CardDetailsView: View {
         } else {
             return "UNKNOWN"
         }
-    }
-
-    func deleteCard(_ card: Card?) {
-        guard let card = card else { return }
-        cards.removeAll { $0.id == card.id }
-        selectedCard = nil
     }
 }
 

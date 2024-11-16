@@ -14,7 +14,7 @@ struct CountryCode: Identifiable, Hashable {
 }
 
 struct SaveCardView: View {
-    @Binding var cards: [Card]
+    @ObservedObject var cardManager: CardManager
     @State private var iban: String = ""
     @State private var cardNumber: String = ""
     @State private var cvv2: String = ""
@@ -54,7 +54,7 @@ struct SaveCardView: View {
             TextField("Card Name", text: $cardName)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .padding()
-
+            
             HStack {
                 Menu {
                     ForEach(countryCodes) { country in
@@ -135,12 +135,12 @@ struct SaveCardView: View {
                     .cornerRadius(10)
             }
             .alert(isPresented: $emptyAlert) {
-                            Alert(
-                                title: Text("Hata"),
-                                message: Text("Lütfen tüm alanları doldurun."),
-                                dismissButton: .default(Text("Tamam"))
-                            )
-                        }
+                Alert(
+                    title: Text("Hata"),
+                    message: Text("Lütfen tüm alanları doldurun."),
+                    dismissButton: .default(Text("Tamam"))
+                )
+            }
         }
         .padding()
         .navigationTitle("Kredi Kartı Bilgilerini Kaydet")
@@ -160,11 +160,11 @@ struct SaveCardView: View {
                 expirationDate: String(format: "%02d/%02d", selectedMonth, selectedYear % 100),
                 cvv2: cvv2
             )
-            cards.append(newCard)
+            cardManager.addCard(newCard)
             presentationMode.wrappedValue.dismiss()
         }
     }
-
+    
     func formatIBAN(_ input: String) -> String {
         // Kullanıcının girilen değerini temizle
         let cleaned = input.uppercased().replacingOccurrences(of: " ", with: "")
@@ -179,20 +179,20 @@ struct SaveCardView: View {
         
         return grouped
     }
-
+    
     func formatCardNumber(_ input: String) -> String {
         // Boşlukları kaldır ve harfleri büyük harfe çevir
         let cleaned = input.uppercased().replacingOccurrences(of: " ", with: "")
         let limited = String(cleaned.prefix(16))
         
-                // 4'lük gruplara ayır
+        // 4'lük gruplara ayır
         let grouped = stride(from: 0, to: limited.count, by: 4).map {
-                    Array(cleaned)[$0..<min($0 + 4, cleaned.count)]
-                }
-                return grouped.map { String($0) }.joined(separator: " ")
+            Array(cleaned)[$0..<min($0 + 4, cleaned.count)]
+        }
+        return grouped.map { String($0) }.joined(separator: " ")
     }
 }
 
 #Preview {
-    SaveCardView(cards: .constant([]))
+    SaveCardView(cardManager: CardManager())
 }
